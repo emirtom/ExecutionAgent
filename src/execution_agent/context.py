@@ -1247,7 +1247,7 @@ class ContextBuilder:
         Args:
             project_name: Name of the project to search for
             model: Default model (used if knowledge_model is not provided)
-            knowledge_model: Separate model for web content analysis (e.g., gpt-5-mini).
+            knowledge_model: Separate model for web content analysis (e.g., gpt-5-nano).
                            This model should be up-to-date and knowledgeable about
                            current technologies, build systems, and best practices.
             max_results: Maximum number of search results to fetch
@@ -1375,7 +1375,7 @@ Provide a concise, actionable summary focused on our goal of installing from sou
 
         Args:
             model: Default model (used if knowledge_model is not provided)
-            knowledge_model: Separate model for summary generation (e.g., gpt-5-mini).
+            knowledge_model: Separate model for summary generation (e.g., gpt-5-nano).
                            This model should be up-to-date and knowledgeable about
                            current technologies, build systems, and best practices.
             search_workflows_summary_prompt: Prompt template for summary generation
@@ -1475,7 +1475,7 @@ Provide a concise, actionable summary focused on our goal of installing from sou
         Args:
             model: Main model used for CI/CD file filtering
             knowledge_model: Separate model for web search analysis and unified summary
-                           generation (e.g., gpt-5-mini). This model should be up-to-date
+                           generation (e.g., gpt-5-nano). This model should be up-to-date
                            and knowledgeable about current technologies and best practices.
                            If not provided, falls back to the main model.
             project_path: Path/name of the project

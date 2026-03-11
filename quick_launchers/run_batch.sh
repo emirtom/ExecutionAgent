@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-export OPENAI_API_KEY="${OPENAI_API_KEY:-your-api-key-here}"
+export AZURE_OPENAI_API_KEY="${AZURE_OPENAI_API_KEY:-your-api-key-here}"
+export AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://your-resource-name.openai.azure.com}"
+export AZURE_OPENAI_API_VERSION="${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
 
 # Directory containing pre-created metadata files
 METADATA_DIR="./metadata_files"
 WORKSPACE="./execution_agent_workspace"
-MODEL="gpt-4o-mini"
+MODEL="gpt-5-nano"
 LOG_FILE="batch_run_$(date +%Y%m%d_%H%M%S).log"
 
 echo "Starting batch run at $(date)" | tee "$LOG_FILE"

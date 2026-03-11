@@ -18,7 +18,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Default values
-MODEL="${AGENT_MODEL:-gpt-4o-mini}"
+MODEL="${AGENT_MODEL:-gpt-5-nano}"
 STEP_LIMIT="${AGENT_STEP_LIMIT:-40}"
 MAX_RETRIES="${AGENT_MAX_RETRIES:-2}"
 PARALLEL="${AGENT_PARALLEL:-1}"
@@ -47,7 +47,7 @@ Selection options:
   <name1>,<name2>,...       Multiple projects (comma-separated)
 
 Run options (via environment variables):
-  AGENT_MODEL               Model to use (default: gpt-4o-mini)
+  AGENT_MODEL               Model to use (default: gpt-5-nano)
   AGENT_STEP_LIMIT          Step limit per attempt (default: 40)
   AGENT_MAX_RETRIES         Max retries after budget exhaustion (default: 2)
   AGENT_PARALLEL            Number of parallel runs (default: 1)

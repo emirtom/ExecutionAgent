@@ -36,10 +36,10 @@ This setup will ask you for your model and an API key.
 Here's a few popular models and the required API keys:
 
 [bold green]anthropic/claude-sonnet-4-5-20250929[/bold green] ([bold green]ANTHROPIC_API_KEY[/bold green])
-[bold green]openai/gpt-5[/bold green] or [bold green]openai/gpt-5-mini[/bold green] ([bold green]OPENAI_API_KEY[/bold green])
+[bold green]azure/gpt-5-nano[/bold green] ([bold green]AZURE_OPENAI_API_KEY[/bold green], plus [bold green]AZURE_OPENAI_ENDPOINT[/bold green])
 [bold green]gemini/gemini-3-pro-preview[/bold green] ([bold green]GEMINI_API_KEY[/bold green])
 
-[bold]Note: Please always include the provider (e.g., "openai/") in the model name.[/bold]
+[bold]Note: Please always include the provider (e.g., "azure/") in the model name when applicable.[/bold]
 
 [bold yellow]You can leave any setting blank to skip it.[/bold yellow]
 

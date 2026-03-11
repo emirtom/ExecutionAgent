@@ -2,9 +2,11 @@
 set -euo pipefail
 
 # Configuration
-export OPENAI_API_KEY="${OPENAI_API_KEY:-your-api-key-here}"
-MODEL="${MODEL:-gpt-4o-mini}"
-KNOWLEDGE_MODEL="${KNOWLEDGE_MODEL:-gpt-4o}"
+export AZURE_OPENAI_API_KEY="${AZURE_OPENAI_API_KEY:-your-api-key-here}"
+export AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://your-resource-name.openai.azure.com}"
+export AZURE_OPENAI_API_VERSION="${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
+MODEL="${MODEL:-gpt-5-nano}"
+KNOWLEDGE_MODEL="${KNOWLEDGE_MODEL:-gpt-5-nano}"
 WORKSPACE="./execution_agent_workspace"
 MAX_RETRIES=2
 

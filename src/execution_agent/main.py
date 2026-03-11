@@ -478,11 +478,15 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--experiment-file", required=True, help="Path to project_meta_data.json")
     ap.add_argument("--task-file", default=None, help="Optional file containing the top-level task/instructions.")
     ap.add_argument("--task", default=None, help="Optional task string. Overrides --task-file if set.")
-    ap.add_argument("--model", default=os.getenv("OPENAI_MODEL", "gpt-5-nano"))
-    ap.add_argument("--knowledge-model", default=os.getenv("KNOWLEDGE_MODEL", "gpt-5-mini"),
-                    help="Model for web search analysis and unified summary (default: gpt-5-mini). "
+    ap.add_argument("--model", default=os.getenv("AZURE_OPENAI_MODEL", os.getenv("OPENAI_MODEL", "gpt-5-nano")))
+    ap.add_argument(
+        "--knowledge-model",
+        default=os.getenv("AZURE_OPENAI_KNOWLEDGE_MODEL", os.getenv("KNOWLEDGE_MODEL", "gpt-5-nano")),
+        help="Model for web search analysis and unified summary (default: gpt-5-nano). "
                          "Should be an up-to-date model with good general knowledge.")
-    ap.add_argument("--api-key", default=os.getenv("OPENAI_API_KEY"))
+    ap.add_argument("--api-key", default=os.getenv("AZURE_OPENAI_API_KEY", os.getenv("OPENAI_API_KEY")))
+    ap.add_argument("--azure-endpoint", default=os.getenv("AZURE_OPENAI_ENDPOINT"))
+    ap.add_argument("--azure-api-version", default=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview"))
     ap.add_argument("--workspace-root", default="execution_agent_workspace")
     ap.add_argument("--prompt-files", default="src/execution_agent/prompt_files")
     ap.add_argument("--log-level", default="INFO", help="DEBUG|INFO|WARNING|ERROR")
@@ -566,7 +570,7 @@ def _run_forced_exit_cycle(
     based on all available context, then attempt to execute them.
 
     Args:
-        knowledge_model: The knowledge model (e.g., gpt-5-mini) to use
+        knowledge_model: The knowledge model (e.g., gpt-5-nano) to use
         agent: The agent instance with history and context
         project_path: Name/path of the project
         project_url: Git URL of the project
@@ -827,8 +831,12 @@ def main() -> int:
 
     # API key
     if not args.api_key:
-        raise SystemExit("Missing OPENAI_API_KEY (or pass --api-key).")
-    os.environ["OPENAI_API_KEY"] = args.api_key
+        raise SystemExit("Missing AZURE_OPENAI_API_KEY (or pass --api-key).")
+    os.environ["AZURE_OPENAI_API_KEY"] = args.api_key
+    if args.azure_endpoint:
+        os.environ["AZURE_OPENAI_ENDPOINT"] = args.azure_endpoint
+    if args.azure_api_version:
+        os.environ["AZURE_OPENAI_API_VERSION"] = args.azure_api_version
 
     # =========================================================================
     # PREPARATION PHASE - Collecting context and building main prompt

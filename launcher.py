@@ -225,7 +225,7 @@ class AgentRunner:
     def __init__(
         self,
         workspace_root: Path,
-        model: str = "gpt-4o-mini",
+        model: str = "gpt-5-nano",
         step_limit: int = 40,
         max_retries: int = 2,
         parallel: int = 1,
@@ -498,8 +498,8 @@ Examples:
     parser.add_argument(
         "--model", "-m",
         type=str,
-        default="gpt-4o-mini",
-        help="Model to use (default: gpt-4o-mini)",
+        default="gpt-5-nano",
+        help="Model to use (default: gpt-5-nano)",
     )
     parser.add_argument(
         "--step-limit", "-s",

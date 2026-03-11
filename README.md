@@ -16,8 +16,10 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 # 3. Install the package
 pip install -e .
 
-# 4. Set your API key
-export OPENAI_API_KEY="your-api-key-here"
+# 4. Set your Azure OpenAI credentials
+export AZURE_OPENAI_API_KEY="your-azure-openai-api-key-here"
+export AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com"
+export AZURE_OPENAI_API_VERSION="2024-02-15-preview"
 
 # 5. Run the agent (step mode for debugging)
 python -m execution_agent.main --experiment-file project_meta_data.json
@@ -26,8 +28,10 @@ python -m execution_agent.main --experiment-file project_meta_data.json
 ### Quick Start (Single Project)
 
 ```bash
-# 1. Set your API key
-export OPENAI_API_KEY="your-api-key"
+# 1. Set your Azure OpenAI credentials
+export AZURE_OPENAI_API_KEY="your-azure-openai-api-key"
+export AZURE_OPENAI_ENDPOINT="https://your-resource-name.openai.azure.com"
+export AZURE_OPENAI_API_VERSION="2024-02-15-preview"
 
 # 2. Create a project metadata file (project_meta_data.json)
 cat > project_meta_data.json << 'EOF'
@@ -42,7 +46,7 @@ EOF
 # 3. Run the agent
 python -m execution_agent.main \
   --experiment-file project_meta_data.json \
-  --model gpt-4o-mini
+  --model gpt-5-nano
 ```
 
 ### Using the Launcher (Multiple Projects)
@@ -202,8 +206,8 @@ cat test_output.log  # See if tests actually ran
 | `--task-file` | Optional file with custom task instructions | - |
 | `--task` | Optional task string (overrides --task-file) | Auto-generated |
 | `--model` | LLM model to use | `gpt-5-nano` |
-| `--knowledge-model` | Model for web search and summaries | `gpt-5-mini` |
-| `--api-key` | OpenAI API key | `$OPENAI_API_KEY` |
+| `--knowledge-model` | Model for web search and summaries | `gpt-5-nano` |
+| `--api-key` | Azure OpenAI API key | `$AZURE_OPENAI_API_KEY` |
 | `--workspace-root` | Directory for outputs | `execution_agent_workspace` |
 | `--prompt-files` | Path to prompt templates | `src/execution_agent/prompt_files` |
 | `--log-level` | Log verbosity (DEBUG/INFO/WARNING/ERROR) | `INFO` |
@@ -218,7 +222,7 @@ cat test_output.log  # See if tests actually ran
 | `--run`, `-r` | Run specified projects | - |
 | `--create-meta` | Create metadata files only | - |
 | `--language`, `-L` | Filter by language (for --list) | - |
-| `--model`, `-m` | Model to use | `gpt-4o-mini` |
+| `--model`, `-m` | Model to use | `gpt-5-nano` |
 | `--step-limit`, `-s` | Step limit per attempt | `40` |
 | `--max-retries`, `-R` | Maximum retries | `2` |
 | `--workspace-root`, `-w` | Workspace directory | `./execution_agent_workspace` |
@@ -293,9 +297,11 @@ Each attempt summary includes:
 
 | Variable | Description |
 |----------|-------------|
-| `OPENAI_API_KEY` | API key for LLM access (required) |
-| `OPENAI_MODEL` | Default model (fallback for --model) |
-| `KNOWLEDGE_MODEL` | Default knowledge model |
+| `AZURE_OPENAI_API_KEY` | Azure OpenAI API key for LLM access (required) |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI endpoint, e.g. `https://<resource>.openai.azure.com` |
+| `AZURE_OPENAI_API_VERSION` | Azure OpenAI API version (default: `2024-02-15-preview`) |
+| `AZURE_OPENAI_MODEL` | Default model (fallback for --model) |
+| `AZURE_OPENAI_KNOWLEDGE_MODEL` | Default knowledge model |
 
 ### Debugging Tips
 
@@ -328,9 +334,11 @@ Create a bash wrapper script to simplify running the agent with your preferred c
 set -euo pipefail
 
 # Configuration
-export OPENAI_API_KEY="${OPENAI_API_KEY:-your-api-key-here}"
-MODEL="${MODEL:-gpt-4o-mini}"
-KNOWLEDGE_MODEL="${KNOWLEDGE_MODEL:-gpt-4o}"
+export AZURE_OPENAI_API_KEY="${AZURE_OPENAI_API_KEY:-your-azure-openai-api-key-here}"
+export AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://your-resource-name.openai.azure.com}"
+export AZURE_OPENAI_API_VERSION="${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
+MODEL="${MODEL:-gpt-5-nano}"
+KNOWLEDGE_MODEL="${KNOWLEDGE_MODEL:-gpt-5-nano}"
 WORKSPACE="./execution_agent_workspace"
 MAX_RETRIES=2
 
@@ -358,21 +366,23 @@ python -m execution_agent.main \
 #!/usr/bin/env bash
 set -euo pipefail
 
-export OPENAI_API_KEY="${OPENAI_API_KEY:-your-api-key-here}"
+export AZURE_OPENAI_API_KEY="${AZURE_OPENAI_API_KEY:-your-azure-openai-api-key-here}"
+export AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://your-resource-name.openai.azure.com}"
+export AZURE_OPENAI_API_VERSION="${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
 
 # Model presets
 case "${1:-}" in
     "fast")
-        MODEL="gpt-4o-mini"
-        KNOWLEDGE_MODEL="gpt-4o-mini"
+        MODEL="gpt-5-nano"
+        KNOWLEDGE_MODEL="gpt-5-nano"
         ;;
     "balanced")
-        MODEL="gpt-4o-mini"
-        KNOWLEDGE_MODEL="gpt-4o"
+        MODEL="gpt-5-nano"
+        KNOWLEDGE_MODEL="gpt-5-nano"
         ;;
     "quality")
-        MODEL="gpt-4o"
-        KNOWLEDGE_MODEL="gpt-4o"
+        MODEL="gpt-5-nano"
+        KNOWLEDGE_MODEL="gpt-5-nano"
         ;;
     "claude")
         MODEL="claude-sonnet-4-20250514"
@@ -406,12 +416,14 @@ python -m execution_agent.main \
 #!/usr/bin/env bash
 set -euo pipefail
 
-export OPENAI_API_KEY="${OPENAI_API_KEY:-your-api-key-here}"
+export AZURE_OPENAI_API_KEY="${AZURE_OPENAI_API_KEY:-your-azure-openai-api-key-here}"
+export AZURE_OPENAI_ENDPOINT="${AZURE_OPENAI_ENDPOINT:-https://your-resource-name.openai.azure.com}"
+export AZURE_OPENAI_API_VERSION="${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}"
 
 # Directory containing pre-created metadata files
 METADATA_DIR="./metadata_files"
 WORKSPACE="./execution_agent_workspace"
-MODEL="gpt-4o-mini"
+MODEL="gpt-5-nano"
 LOG_FILE="batch_run_$(date +%Y%m%d_%H%M%S).log"
 
 echo "Starting batch run at $(date)" | tee "$LOG_FILE"
