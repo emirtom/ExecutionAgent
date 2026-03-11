@@ -46,10 +46,10 @@ class Project:
     @property
     def safe_name(self) -> str:
         """Return a filesystem-safe name."""
-        return self.name.lower().replace("-", "_").replace(".", "_")
+        return self.name.lower().replace("/", "__").replace("-", "_").replace(".", "_")
 
 
-# All 50 projects
+# All 50 projects (default set; can be overridden by --repos-file)
 PROJECTS: List[Project] = [
     # Python Projects (14)
     Project("pandas", "https://github.com/pandas-dev/pandas", "Python", "pandas_image:ExecutionAgent"),
@@ -112,14 +112,29 @@ PROJECTS: List[Project] = [
     Project("json", "https://github.com/nlohmann/json", "C++", "json_image:ExecutionAgent"),
 ]
 
-# Create lookup dictionaries
-PROJECTS_BY_NAME: Dict[str, Project] = {p.name.lower(): p for p in PROJECTS}
-PROJECTS_BY_LANGUAGE: Dict[str, List[Project]] = {}
-for p in PROJECTS:
-    lang = p.language.lower()
-    if lang not in PROJECTS_BY_LANGUAGE:
-        PROJECTS_BY_LANGUAGE[lang] = []
-    PROJECTS_BY_LANGUAGE[lang].append(p)
+def _rebuild_project_indexes(projects: List[Project]) -> tuple[Dict[str, Project], Dict[str, List[Project]]]:
+    """Build lookup maps from a projects list."""
+    by_name: Dict[str, Project] = {p.name.lower(): p for p in projects}
+    by_language: Dict[str, List[Project]] = {}
+    for p in projects:
+        lang = p.language.lower()
+        by_language.setdefault(lang, []).append(p)
+    return by_name, by_language
+
+
+# Create lookup dictionaries (can be rebuilt if PROJECTS is overridden)
+PROJECTS_BY_NAME, PROJECTS_BY_LANGUAGE = _rebuild_project_indexes(PROJECTS)
+
+
+def override_projects(new_projects: List[Project]) -> None:
+    """
+    Override the global PROJECTS list and associated lookup maps.
+
+    Used when --repos-file is provided.
+    """
+    global PROJECTS, PROJECTS_BY_NAME, PROJECTS_BY_LANGUAGE
+    PROJECTS = new_projects
+    PROJECTS_BY_NAME, PROJECTS_BY_LANGUAGE = _rebuild_project_indexes(PROJECTS)
 
 
 # =============================================================================
@@ -162,6 +177,68 @@ def print_project_table(projects: List[Project]) -> None:
     for i, p in enumerate(projects, 1):
         url_short = p.url[:47] + "..." if len(p.url) > 50 else p.url
         print(f"{i:<4} {p.name:<25} {p.language:<12} {url_short:<50}")
+
+
+def _derive_github_name_from_url(url_or_slug: str) -> str:
+    """
+    Derive a project name from a GitHub URL or slug.
+
+    Rules:
+    - If input contains "github.com/", use everything after it.
+    - Otherwise treat input as a slug like "owner/repo" (or longer).
+    - Strip trailing ".git" and any trailing "/" characters.
+    - Keep any "/" in the derived name (e.g. "owner/repo").
+    """
+    s = (url_or_slug or "").strip()
+    if not s:
+        raise ValueError("Empty repo line")
+
+    marker = "github.com/"
+    if marker in s:
+        s = s.split(marker, 1)[1]
+    s = s.strip().strip("/")
+    if s.endswith(".git"):
+        s = s[: -len(".git")]
+    s = s.strip().strip("/")
+    if not s:
+        raise ValueError(f"Could not derive name from repo value: {url_or_slug!r}")
+    return s
+
+
+def load_projects_from_file(path: Path) -> List[Project]:
+    """
+    Load projects from a text file (one GitHub repo per line) and return Project instances.
+
+    Expected format:
+      - Each non-empty line is either:
+          - a GitHub URL (e.g. https://github.com/owner/repo)
+          - or a GitHub slug (e.g. owner/repo)
+      - Lines starting with "#" are ignored.
+
+    Derived fields:
+      - name: the part after github.com/ (keeps "/")
+      - url: normalized to https://github.com/<name>
+      - language: defaults to "Unknown"
+      - image_tag: defaults to "<safe_name>_image:ExecutionAgent"
+    """
+    lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
+    projects: List[Project] = []
+    for raw in lines:
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+
+        name = _derive_github_name_from_url(line)
+        url = f"https://github.com/{name}"
+        language = "Unknown"
+        safe = name.lower().replace("/", "__").replace("-", "_").replace(".", "_")
+        image_tag = f"{safe}_image:ExecutionAgent"
+        projects.append(Project(name=name, url=url, language=language, image_tag=image_tag))
+
+    if not projects:
+        raise ValueError("repos file contained no repositories")
+
+    return projects
 
 
 def resolve_project_selection(selection: str) -> List[Project]:
@@ -514,6 +591,17 @@ Examples:
         help="Maximum retries after budget exhaustion (default: 2)",
     )
 
+    # Repository source
+    parser.add_argument(
+        "--repos-file",
+        type=str,
+        default=None,
+        help=(
+            "Optional text file with one GitHub repo per line (URL or 'owner/repo'). "
+            "If provided, this list replaces the built-in project list."
+        ),
+    )
+
     # Execution options
     parser.add_argument(
         "--workspace-root", "-w",
@@ -548,6 +636,19 @@ def main() -> int:
     script_dir = get_script_dir()
     workspace_root = Path(args.workspace_root) if args.workspace_root else script_dir / "execution_agent_workspace"
     workspace_root.mkdir(parents=True, exist_ok=True)
+
+    # Optional: override built-in PROJECTS with user-provided repos file
+    if args.repos_file:
+        repos_path = Path(args.repos_file)
+        if not repos_path.is_file():
+            print(f"Error: repos file not found: {repos_path}")
+            return 1
+        try:
+            custom_projects = load_projects_from_file(repos_path)
+        except Exception as e:
+            print(f"Error loading repos file '{repos_path}': {e}")
+            return 1
+        override_projects(custom_projects)
 
     # Handle --list
     if args.list:
