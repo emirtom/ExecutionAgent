@@ -832,11 +832,19 @@ def main() -> int:
     # API key
     if not args.api_key:
         raise SystemExit("Missing AZURE_OPENAI_API_KEY (or pass --api-key).")
+
+    # Primary source of truth: Azure-style envs
     os.environ["AZURE_OPENAI_API_KEY"] = args.api_key
     if args.azure_endpoint:
         os.environ["AZURE_OPENAI_ENDPOINT"] = args.azure_endpoint
     if args.azure_api_version:
         os.environ["AZURE_OPENAI_API_VERSION"] = args.azure_api_version
+
+    # Compatibility: mirror into OpenAI-style envs so LiteLLM/OpenAI client
+    # still sees an API key, and into MSWEA_MODEL_API_KEY which mini-swe-agent
+    # uses to inject api_key into model_kwargs if present.
+    os.environ["OPENAI_API_KEY"] = args.api_key
+    os.environ["MSWEA_MODEL_API_KEY"] = args.api_key
 
     # =========================================================================
     # PREPARATION PHASE - Collecting context and building main prompt
@@ -860,11 +868,30 @@ def main() -> int:
     remove_progress_bars_prompt = load_text(str(pf / "remove_progress_bars"))
 
     LOG.info("Initializing models...")
-    model = LitellmModel(model_name=args.model, model_kwargs={})
 
-    # Create a separate knowledge model for web search analysis and unified summary
-    # This model should be up-to-date and knowledgeable about current technologies
-    knowledge_model = LitellmModel(model_name=args.knowledge_model, model_kwargs={})
+    # If an Azure endpoint is configured, route LiteLLM calls to Azure by:
+    # - Using azure/<deployment_name> model identifiers
+    # - Passing api_base, api_key, and api_version directly via model_kwargs
+    azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+    azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+
+    if azure_endpoint:
+        LOG.info("Azure OpenAI endpoint detected, configuring LiteLLM for Azure provider.")
+        primary_model_name = f"azure/{args.model}"
+        knowledge_model_name = f"azure/{args.knowledge_model}"
+        common_azure_kwargs = {
+            "api_base": azure_endpoint,
+            "api_key": args.api_key,
+            "api_version": azure_api_version,
+        }
+        model = LitellmModel(model_name=primary_model_name, model_kwargs=common_azure_kwargs)
+        # Separate instance for knowledge model (can share same Azure settings)
+        knowledge_model = LitellmModel(model_name=knowledge_model_name, model_kwargs=common_azure_kwargs)
+    else:
+        model = LitellmModel(model_name=args.model, model_kwargs={})
+        # Create a separate knowledge model for web search analysis and unified summary
+        # This model should be up-to-date and knowledgeable about current technologies
+        knowledge_model = LitellmModel(model_name=args.knowledge_model, model_kwargs={})
 
     LOG.info("Registering tools...")
     commands_schema = {
