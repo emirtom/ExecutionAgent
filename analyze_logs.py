@@ -64,15 +64,21 @@ def main():
                 project_url = "unknown"
                 if os.path.exists(meta_path):
                     with open(meta_path, 'r') as f:
-                        meta = json.load(f)
-                        project_url = meta.get('project_url', 'unknown')
+                        try:
+                            meta = json.load(f)
+                            project_url = meta.get('project_url', 'unknown')
+                        except json.JSONDecodeError:
+                            pass
 
                 status = "failed"
                 if os.path.exists(agent_state_path):
                     with open(agent_state_path, 'r') as f:
-                        state = json.load(f)
-                        if state.get('analysis_succeeded'):
-                            status = "success"
+                        try:
+                            state = json.load(f)
+                            if state.get('analysis_succeeded'):
+                                status = "success"
+                        except json.JSONDecodeError:
+                            pass
                 
                 summary[slug] = {
                     "url": project_url,
@@ -121,17 +127,20 @@ def main():
                 agent_state_path = os.path.join(project_log_dir, latest_ts, "agent_state.json")
                 if os.path.exists(agent_state_path):
                     with open(agent_state_path, 'r') as f:
-                        state = json.load(f)
-                        iteration_count = state.get('cycle_count', 0)
-                        if state.get('container_id') is not None:
-                            build_passed = True
-                            if status != 'success':
-                                build_success_test_fail_count += 1
-                        
-                        # Get final Dockerfile if possible
-                        written = state.get('written_files', [])
-                        if written:
-                            final_dockerfile = written[-1][-1] # Get content of last written file
+                        try:
+                            state = json.load(f)
+                            iteration_count = state.get('cycle_count', 0)
+                            if state.get('container_id') is not None:
+                                build_passed = True
+                                if status != 'success':
+                                    build_success_test_fail_count += 1
+                            
+                            # Get final Dockerfile if possible
+                            written = state.get('written_files', [])
+                            if written:
+                                final_dockerfile = written[-1][-1] # Get content of last written file
+                        except json.JSONDecodeError:
+                            pass
 
         run_records.append({
             "id": f"{slug}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
